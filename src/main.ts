@@ -1,0 +1,30 @@
+import { readFile } from 'node:fs/promises';
+import postgres from 'postgres';
+import { KeycloakAuthClient } from './client/auth-client.js';
+import { HttpTelegramClient } from './client/telegram-client.js';
+import { readSettings } from './config/settings.js';
+import { createApp } from './controller/app.js';
+import { PostgresLinkStore } from './repository/postgres-link-store.js';
+import { TokenBox } from './security/token-box.js';
+import { LinkService } from './service/link-service.js';
+
+const settings = readSettings(process.env);
+const sql = postgres(settings.databaseUrl, { max: 5 });
+const migration = await readFile(new URL('../migrations/001_init.sql', import.meta.url), 'utf8');
+await sql.unsafe(migration);
+
+const auth = new KeycloakAuthClient(settings.deviceUrl, settings.clientId, settings.clientSecret);
+const telegram = new HttpTelegramClient(`https://api.telegram.org/bot${settings.telegramToken}`);
+const store = new PostgresLinkStore(sql);
+const links = new LinkService(auth, store, new TokenBox(settings.tokenKey));
+const app = createApp({ webhookSecret: settings.webhookSecret, links, telegram });
+
+const close = async (): Promise<void> => {
+    await app.close();
+    await sql.end();
+};
+
+process.on('SIGTERM', () => void close());
+process.on('SIGINT', () => void close());
+
+await app.listen({ port: settings.port, host: settings.host });

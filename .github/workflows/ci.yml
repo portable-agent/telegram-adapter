@@ -1,0 +1,29 @@
+name: CI
+
+on:
+    pull_request:
+    push:
+        branches: [main]
+
+permissions:
+    contents: read
+
+jobs:
+    node:
+        uses: portable-agent/.github/.github/workflows/reusable-node.yml@dea91698a6b4e5be7dec8980e7f3bd9dd80ac961
+        with:
+            node-version: '24'
+    docs:
+        uses: portable-agent/.github/.github/workflows/reusable-docs.yml@dea91698a6b4e5be7dec8980e7f3bd9dd80ac961
+    security:
+        uses: portable-agent/.github/.github/workflows/reusable-security.yml@dea91698a6b4e5be7dec8980e7f3bd9dd80ac961
+    container:
+        needs: [node, docs, security]
+        permissions:
+            contents: read
+            packages: write
+            id-token: write
+            attestations: write
+        uses: portable-agent/.github/.github/workflows/reusable-container.yml@dea91698a6b4e5be7dec8980e7f3bd9dd80ac961
+        with:
+            image-name: telegram-adapter

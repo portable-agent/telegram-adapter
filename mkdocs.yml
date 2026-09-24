@@ -1,0 +1,21 @@
+site_name: Telegram Adapter
+site_description: Документация Telegram-адаптера Portable Agent
+docs_dir: docs
+strict: true
+theme:
+    name: material
+    language: ru
+nav:
+    - Главная: index.md
+    - Архитектура: architecture.md
+    - Разработка: development.md
+    - Runbook: runbook.md
+    - Решения:
+          - Привязка аккаунта: decisions/0001-device-link.md
+markdown_extensions:
+    - admonition
+    - pymdownx.superfences:
+          custom_fences:
+              - name: mermaid
+                class: mermaid
+                format: !!python/name:pymdownx.superfences.fence_code_format
