@@ -24,6 +24,8 @@ describe('LinkWorker', () => {
             complete,
             reschedule: vi.fn(),
             removePending: vi.fn(),
+            find: vi.fn(),
+            saveSession: vi.fn(),
         };
         const auth: AuthClient = {
             start: vi.fn(),
@@ -33,6 +35,7 @@ describe('LinkWorker', () => {
                 refreshToken: 'refresh-token',
                 expiresIn: 300,
             }),
+            refresh: vi.fn(),
         };
         const sendText = vi.fn<TelegramClient['sendText']>().mockResolvedValue(undefined);
         const worker = new LinkWorker(auth, store, { sendText }, box, () => new Date(1_000));
@@ -63,10 +66,13 @@ describe('LinkWorker', () => {
             complete: vi.fn(),
             reschedule,
             removePending: vi.fn(),
+            find: vi.fn(),
+            saveSession: vi.fn(),
         };
         const auth: AuthClient = {
             start: vi.fn(),
             poll: vi.fn().mockResolvedValue({ status: 'waiting', waitMore: 5 }),
+            refresh: vi.fn(),
         };
         const worker = new LinkWorker(auth, store, { sendText: vi.fn() }, box, () => new Date(1_000));
 
@@ -97,10 +103,13 @@ describe('LinkWorker', () => {
             complete: vi.fn(),
             reschedule: vi.fn(),
             removePending,
+            find: vi.fn(),
+            saveSession: vi.fn(),
         };
         const auth: AuthClient = {
             start: vi.fn(),
             poll: vi.fn().mockResolvedValue({ status }),
+            refresh: vi.fn(),
         };
         const worker = new LinkWorker(auth, store, { sendText }, box, () => new Date(1_000));
 

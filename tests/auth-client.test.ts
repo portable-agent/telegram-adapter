@@ -139,4 +139,43 @@ describe('KeycloakAuthClient', () => {
 
         await expect(client.poll('device')).rejects.toThrow('Keycloak token request failed.');
     });
+
+    it('refresh_whenRefreshTokenIsValid_shouldReturnRotatedToken', async () => {
+        const request = vi
+            .fn<typeof fetch>()
+            .mockResolvedValue(
+                Response.json({ access_token: 'access', refresh_token: 'rotated-refresh', expires_in: 300 }),
+            );
+        const client = new KeycloakAuthClient(
+            'https://login.example/auth/device',
+            'https://login.example/token',
+            'telegram',
+            'secret',
+            request,
+        );
+
+        await expect(client.refresh('old-refresh')).resolves.toEqual({
+            accessToken: 'access',
+            refreshToken: 'rotated-refresh',
+            expiresIn: 300,
+        });
+        const body = request.mock.calls[0]?.[1]?.body as URLSearchParams;
+        expect(body.get('grant_type')).toBe('refresh_token');
+        expect(body.get('refresh_token')).toBe('old-refresh');
+    });
+
+    it('refresh_whenRefreshTokenIsInvalid_shouldReturnSafeError', async () => {
+        const request = vi
+            .fn<typeof fetch>()
+            .mockResolvedValue(Response.json({ error: 'invalid_grant' }, { status: 400 }));
+        const client = new KeycloakAuthClient(
+            'https://login.example/auth/device',
+            'https://login.example/token',
+            'telegram',
+            'secret',
+            request,
+        );
+
+        await expect(client.refresh('old-refresh')).rejects.toThrow('Keycloak refresh token is invalid.');
+    });
 });

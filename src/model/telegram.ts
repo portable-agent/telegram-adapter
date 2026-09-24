@@ -6,12 +6,13 @@ export const telegramUpdateSchema = z
         message: z
             .object({
                 message_id: z.number().int(),
-                from: z.object({ id: z.number().int() }).strict(),
-                chat: z.object({ id: z.number().int() }).strict(),
+                from: z.object({ id: z.number().int() }).passthrough(),
+                chat: z.object({ id: z.number().int() }).passthrough(),
                 text: z.string().min(1),
             })
-            .strict(),
+            .passthrough()
+            .optional(),
     })
-    .strict();
+    .passthrough();
 
 export type TelegramUpdate = z.infer<typeof telegramUpdateSchema>;

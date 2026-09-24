@@ -15,6 +15,13 @@ export type SavedLink = {
     linkedAt: Date;
 };
 
+export type LinkedUser = {
+    telegramUserId: string;
+    chatId: string;
+    refreshToken: LockedToken;
+    conversationId: string | null;
+};
+
 export type PendingLink = {
     telegramUserId: string;
     chatId: string;

@@ -111,4 +111,42 @@ export class PostgresLinkStore implements LinkStore {
     public async removePending(telegramUserId: string): Promise<void> {
         await this.sql`DELETE FROM telegram_pending_links WHERE telegram_user_id = ${telegramUserId}`;
     }
+
+    public async find(telegramUserId: string) {
+        const rows = await this.sql<
+            Array<{
+                telegram_user_id: string;
+                chat_id: string;
+                refresh_token: PendingLink['deviceCode'];
+                conversation_id: string | null;
+            }>
+        >`
+            SELECT telegram_user_id, chat_id, refresh_token, conversation_id
+            FROM telegram_links
+            WHERE telegram_user_id = ${telegramUserId}
+        `;
+        const row = rows[0];
+        return row
+            ? {
+                  telegramUserId: row.telegram_user_id,
+                  chatId: row.chat_id,
+                  refreshToken: row.refresh_token,
+                  conversationId: row.conversation_id,
+              }
+            : null;
+    }
+
+    public async saveSession(
+        telegramUserId: string,
+        refreshToken: PendingLink['deviceCode'],
+        conversationId: string,
+    ): Promise<void> {
+        await this.sql`
+            UPDATE telegram_links
+            SET refresh_token = ${this.sql.json(refreshToken)},
+                conversation_id = ${conversationId},
+                updated_at = now()
+            WHERE telegram_user_id = ${telegramUserId}
+        `;
+    }
 }

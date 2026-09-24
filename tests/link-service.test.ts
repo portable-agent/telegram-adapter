@@ -16,6 +16,7 @@ describe('LinkService', () => {
                 interval: 5,
             }),
             poll: vi.fn(),
+            refresh: vi.fn(),
         };
         const savePending = vi.fn<LinkStore['savePending']>().mockResolvedValue(undefined);
         const store: LinkStore = {
@@ -24,6 +25,8 @@ describe('LinkService', () => {
             complete: vi.fn(),
             reschedule: vi.fn(),
             removePending: vi.fn(),
+            find: vi.fn(),
+            saveSession: vi.fn(),
         };
         const service = new LinkService(auth, store, new TokenBox(Buffer.alloc(32, 3)), () => new Date(0));
 
@@ -52,6 +55,7 @@ describe('LinkService', () => {
                 interval: 5,
             }),
             poll: vi.fn(),
+            refresh: vi.fn(),
         };
         const savePending = vi.fn<LinkStore['savePending']>().mockResolvedValue(undefined);
         const before = Date.now();
@@ -63,6 +67,8 @@ describe('LinkService', () => {
                 complete: vi.fn(),
                 reschedule: vi.fn(),
                 removePending: vi.fn(),
+                find: vi.fn(),
+                saveSession: vi.fn(),
             },
             new TokenBox(Buffer.alloc(32, 3)),
         );

@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS telegram_links (
     telegram_user_id BIGINT PRIMARY KEY,
     chat_id BIGINT NOT NULL,
     refresh_token JSONB NOT NULL,
+    conversation_id UUID,
     linked_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE telegram_links ADD COLUMN IF NOT EXISTS conversation_id UUID;

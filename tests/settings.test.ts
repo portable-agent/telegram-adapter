@@ -10,6 +10,7 @@ const env = {
     KEYCLOAK_CLIENT_SECRET: 'client-secret-value',
     TOKEN_KEY_BASE64: Buffer.alloc(32, 1).toString('base64'),
     DATABASE_URL: 'postgres://user:pass@localhost:5432/telegram',
+    CHANNEL_GATEWAY_URL: 'http://localhost:8084',
 };
 
 describe('readSettings', () => {

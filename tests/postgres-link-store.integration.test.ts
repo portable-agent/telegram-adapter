@@ -42,6 +42,11 @@ describe('PostgresLinkStore', () => {
 
         const refreshToken = box.lock('refresh-token');
         await store.complete('100', refreshToken, new Date());
+        const user = await store.find('100');
+        expect(box.unlock(user!.refreshToken)).toBe('refresh-token');
+
+        const conversationId = '10000000-0000-4000-8000-000000000002';
+        await store.saveSession('100', box.lock('rotated-refresh'), conversationId);
 
         const pending = await sql<Array<{ count: number }>>`SELECT count(*)::int AS count FROM telegram_pending_links`;
         const saved = await sql<Array<{ refresh_token: LockedToken }>>`
@@ -49,6 +54,7 @@ describe('PostgresLinkStore', () => {
         `;
         expect(pending[0]?.count).toBe(0);
         expect(saved).toHaveLength(1);
-        expect(box.unlock(saved[0]!.refresh_token)).toBe('refresh-token');
+        expect(box.unlock(saved[0]!.refresh_token)).toBe('rotated-refresh');
+        await expect(store.find('404')).resolves.toBeNull();
     });
 });

@@ -4,7 +4,10 @@ import type { StartLink } from '../model/link.js';
 export interface AuthClient {
     start(): Promise<StartLink>;
     poll(deviceCode: string): Promise<LinkPoll>;
+    refresh(refreshToken: string): Promise<UserToken>;
 }
+
+export type UserToken = { accessToken: string; refreshToken: string; expiresIn: number };
 
 export type LinkPoll =
     | { status: 'waiting'; waitMore: number }
@@ -104,5 +107,28 @@ export class KeycloakAuthClient implements AuthClient {
             return { status: 'expired' };
         }
         throw new Error('Keycloak token request failed.');
+    }
+
+    public async refresh(refreshToken: string): Promise<UserToken> {
+        const body = new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken,
+            client_id: this.clientId,
+            client_secret: this.clientSecret,
+        });
+        const response = await this.request(this.tokenUrl, {
+            method: 'POST',
+            headers: { 'content-type': 'application/x-www-form-urlencoded' },
+            body,
+        });
+        if (!response.ok) {
+            throw new Error('Keycloak refresh token is invalid.');
+        }
+        const token = tokenSchema.parse(await response.json());
+        return {
+            accessToken: token.access_token,
+            refreshToken: token.refresh_token,
+            expiresIn: token.expires_in,
+        };
     }
 }
