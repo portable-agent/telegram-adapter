@@ -62,17 +62,19 @@ export interface components {
         MessageRequest: {
             requestKey: string;
             text: string;
-            context: components["schemas"]["MessageContext"];
+            context: components["schemas"]["message-context.schema"];
         };
-        MessageContext: {
-            locale: string;
-            timeZone: string;
-        };
+        MessageContext: components["schemas"]["message-context.schema"];
         Problem: {
             /** @description Короткое описание ошибки без внутренних данных сервиса. */
             detail: unknown;
         } & {
             [key: string]: unknown;
+        };
+        /** Message context */
+        "message-context.schema": {
+            locale: string;
+            timeZone: string;
         };
         CalendarCreateEventPayload: {
             title: string;
@@ -114,7 +116,7 @@ export interface components {
             conversationId?: string;
             requestKey: string;
             text: string;
-            context: components["schemas"]["MessageContext"];
+            context: components["schemas"]["message-context.schema"];
         };
         TextReply: {
             /**
