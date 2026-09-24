@@ -82,10 +82,12 @@ describe('MessageService', () => {
             reply: {
                 type: 'confirmation',
                 card: {
+                    schemaVersion: 1,
+                    widget: 'action_confirmation',
                     actionId: '10000000-0000-4000-8000-000000000003',
                     payloadHash: 'a'.repeat(64),
                     title: 'Подтвердите встречу',
-                    fields: [{ label: 'Название', value: 'Demo' }],
+                    fields: [{ label: 'Название', value: 'Demo', sensitive: false }],
                     actions: [
                         { id: 'confirm', label: 'Подтвердить' },
                         { id: 'cancel', label: 'Отменить' },

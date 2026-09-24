@@ -10,3 +10,7 @@
 
 Используйте простой английский и четыре пробела. Настоящие bot token, refresh token и данные людей в
 тестах запрещены.
+
+DTO границы Channel Gateway вручную не копируются. После нового релиза `portable-agent/contracts`
+выполните `./scripts/update-contracts.ps1 -Version X.Y.Z`, затем `corepack pnpm generate` и проверьте
+изменения OpenAPI вместе с сгенерированным `src/generated/channel-api.ts`.

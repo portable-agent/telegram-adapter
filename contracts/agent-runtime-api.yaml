@@ -1,0 +1,170 @@
+openapi: 3.1.0
+info:
+  title: Portable Agent Runtime API
+  version: 2.5.0
+  description: Подготовка предложения действия из текста пользователя.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://api.portable-agent.dev/agent-runtime
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/proposals:
+    post:
+      tags: [proposals]
+      operationId: createProposal
+      summary: Подготовить предложение действия
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProposalRequest"
+      responses:
+        "200":
+          description: Готовое предложение или вопрос для уточнения
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalResponse"
+        "401":
+          description: JWT отсутствует или не подходит Agent Runtime
+        "422":
+          description: Запрос не соответствует контракту
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ProposalRequest:
+      type: object
+      additionalProperties: false
+      required: [text, context]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        context:
+          $ref: "#/components/schemas/UserContext"
+    UserContext:
+      type: object
+      additionalProperties: false
+      properties:
+        locale:
+          type: string
+          minLength: 2
+          maxLength: 16
+          default: ru-RU
+        timeZone:
+          type: string
+          minLength: 1
+          maxLength: 100
+          default: Europe/Moscow
+          pattern: "^(UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$"
+        availableConnectors:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum: [fake-calendar]
+          default: []
+    ProposalResponse:
+      type: object
+      additionalProperties: false
+      required: [proposal, clarification]
+      properties:
+        proposal:
+          anyOf:
+            - $ref: "#/components/schemas/ActionPlan"
+            - type: "null"
+        clarification:
+          anyOf:
+            - $ref: "#/components/schemas/Clarification"
+            - type: "null"
+    ActionPlan:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          proposalId,
+          kind,
+          connector,
+          payload,
+          explanation,
+          risk,
+          requiresApproval,
+        ]
+      properties:
+        proposalId: { type: string, format: uuid }
+        kind:
+          type: string
+          enum: [calendar.create_event]
+        connector:
+          type: string
+          enum: [fake-calendar]
+        payload:
+          $ref: "#/components/schemas/CalendarCreateEventPayload"
+        explanation:
+          type: string
+          minLength: 1
+          maxLength: 500
+        risk:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+        requiresApproval:
+          type: boolean
+          const: true
+    Clarification:
+      type: object
+      additionalProperties: false
+      required: [question, missingFields]
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 500
+        missingFields:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum: [title, startAt, endAt, timeZone]
+    CalendarCreateEventPayload:
+      type: object
+      additionalProperties: false
+      required: [title, startAt, endAt, timeZone]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ".*\\S.*"
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        timeZone:
+          type: string
+          maxLength: 100
+          pattern: "^(UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$"
+        description: { type: string, maxLength: 2000 }
+        attendees:
+          type: array
+          maxItems: 50
+          uniqueItems: true
+          items: { type: string, format: email, maxLength: 254 }
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [detail]
+      properties:
+        detail: { type: array }
