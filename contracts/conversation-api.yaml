@@ -73,7 +73,7 @@ components:
         context:
           $ref: "#/components/schemas/MessageContext"
     MessageContext:
-      $ref: "./channel-gateway-api.yaml#/components/schemas/MessageContext"
+      $ref: "../schemas/message-context.schema.json"
     MessageResponse:
       type: object
       additionalProperties: false

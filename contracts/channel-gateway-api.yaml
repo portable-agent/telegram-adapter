@@ -145,19 +145,7 @@ components:
         context:
           $ref: "#/components/schemas/MessageContext"
     MessageContext:
-      type: object
-      additionalProperties: false
-      required: [locale, timeZone]
-      properties:
-        locale:
-          type: string
-          minLength: 2
-          maxLength: 16
-        timeZone:
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: "^(UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$"
+      $ref: "../schemas/message-context.schema.json"
     Problem:
       type: object
       additionalProperties: true
