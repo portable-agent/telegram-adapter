@@ -1,0 +1,167 @@
+openapi: 3.1.0
+info:
+  title: Portable Agent Channel Gateway API
+  version: 2.5.0
+  description: Единый текстовый вход для независимых каналов пользователя.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://api.portable-agent.dev/channel-gateway
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/messages:
+    post:
+      tags: [messages]
+      operationId: createMessage
+      summary: Обработать текстовое сообщение
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageRequest"
+      responses:
+        "200":
+          description: Предложение действия или вопрос для уточнения
+          content:
+            application/json:
+              schema:
+                $ref: "./agent-runtime-api.yaml#/components/schemas/ProposalResponse"
+        "401":
+          description: JWT отсутствует или не подходит Channel Gateway
+        "422":
+          description: Запрос не соответствует контракту
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Agent Runtime временно недоступен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/conversations/messages:
+    post:
+      tags: [messages]
+      operationId: createConversationMessage
+      summary: Обработать сообщение с сохранением диалога
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./conversation-api.yaml#/components/schemas/MessageRequest"
+      responses:
+        "200":
+          description: Вопрос для уточнения или карточка подтверждения
+          content:
+            application/json:
+              schema:
+                $ref: "./conversation-api.yaml#/components/schemas/MessageResponse"
+        "401":
+          description: JWT отсутствует или не подходит Channel Gateway
+        "422":
+          description: Запрос не соответствует контракту
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Conversation Service временно недоступен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/actions/{actionId}/decisions:
+    post:
+      tags: [actions]
+      operationId: decideAction
+      summary: Подтвердить или отменить действие из канала
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "./action-api.yaml#/components/parameters/ActionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./action-api.yaml#/components/schemas/ActionDecisionRequest"
+      responses:
+        "202":
+          description: Решение принято Action Service
+          content:
+            application/json:
+              schema:
+                $ref: "./action-api.yaml#/components/schemas/ActionResponse"
+        "401":
+          description: JWT отсутствует или не подходит Channel Gateway
+        "409":
+          description: Действие уже завершено или payloadHash не совпал
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "422":
+          description: Запрос не соответствует контракту
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Action Service временно недоступен
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    MessageRequest:
+      type: object
+      additionalProperties: false
+      required: [requestKey, text, context]
+      properties:
+        requestKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: "^[A-Za-z0-9._:-]+$"
+        text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        context:
+          $ref: "#/components/schemas/MessageContext"
+    MessageContext:
+      type: object
+      additionalProperties: false
+      required: [locale, timeZone]
+      properties:
+        locale:
+          type: string
+          minLength: 2
+          maxLength: 16
+        timeZone:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: "^(UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$"
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [detail]
+      properties:
+        detail:
+          description: Короткое описание ошибки без внутренних данных сервиса.

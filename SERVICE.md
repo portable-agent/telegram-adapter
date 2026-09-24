@@ -7,7 +7,7 @@
 | Язык               | TypeScript, Node.js 24                                                              |
 | Входящий контракт  | Telegram Bot API webhook                                                            |
 | Исходящий контракт | Keycloak Device Flow, Telegram Bot API, Channel Gateway API                         |
-| Свои данные        | Привязка Telegram user к OIDC session; зашифрованный refresh token                  |
+| Свои данные        | Device Flow, привязка user к токену и одноразовые callback кнопок                   |
 | Прямые зависимости | PostgreSQL, Keycloak, Telegram Bot API, Channel Gateway                             |
 | Не отвечает за     | Диалог, AI, approval, workflow и выполнение действий                                |
 | SLO                | Не определён до baseline-теста                                                      |
@@ -18,4 +18,6 @@
 - Telegram user id не считается identity платформы;
 - привязка создаётся только после входа пользователя через Keycloak Device Flow;
 - refresh token шифруется до записи в PostgreSQL;
+- callback содержит только случайный id, а action id и payload hash остаются в PostgreSQL;
+- callback становится использованным только после успешного ответа Channel Gateway;
 - секреты и содержимое сообщений не попадают в обычные логи.

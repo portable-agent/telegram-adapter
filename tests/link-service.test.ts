@@ -15,9 +15,23 @@ describe('LinkService', () => {
                 expiresIn: 600,
                 interval: 5,
             }),
+            poll: vi.fn(),
+            refresh: vi.fn(),
         };
         const savePending = vi.fn<LinkStore['savePending']>().mockResolvedValue(undefined);
-        const store: LinkStore = { savePending };
+        const store: LinkStore = {
+            savePending,
+            claimReady: vi.fn(),
+            complete: vi.fn(),
+            reschedule: vi.fn(),
+            removePending: vi.fn(),
+            find: vi.fn(),
+            saveSession: vi.fn(),
+            saveCallbacks: vi.fn(),
+            claimCallback: vi.fn(),
+            completeCallback: vi.fn(),
+            releaseCallback: vi.fn(),
+        };
         const service = new LinkService(auth, store, new TokenBox(Buffer.alloc(32, 3)), () => new Date(0));
 
         const result = await service.start('100', '200');
@@ -44,10 +58,28 @@ describe('LinkService', () => {
                 expiresIn: 600,
                 interval: 5,
             }),
+            poll: vi.fn(),
+            refresh: vi.fn(),
         };
         const savePending = vi.fn<LinkStore['savePending']>().mockResolvedValue(undefined);
         const before = Date.now();
-        const service = new LinkService(auth, { savePending }, new TokenBox(Buffer.alloc(32, 3)));
+        const service = new LinkService(
+            auth,
+            {
+                savePending,
+                claimReady: vi.fn(),
+                complete: vi.fn(),
+                reschedule: vi.fn(),
+                removePending: vi.fn(),
+                find: vi.fn(),
+                saveSession: vi.fn(),
+                saveCallbacks: vi.fn(),
+                claimCallback: vi.fn(),
+                completeCallback: vi.fn(),
+                releaseCallback: vi.fn(),
+            },
+            new TokenBox(Buffer.alloc(32, 3)),
+        );
 
         await service.start('100', '200');
 

@@ -7,7 +7,9 @@ FROM base AS build
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=telegram-adapter-pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
-COPY tsconfig.json tsconfig.test.json vitest.config.ts ./
+COPY tsconfig.json tsconfig.test.json vitest.config.ts vitest.integration.config.ts ./
+COPY contracts ./contracts
+COPY schemas ./schemas
 COPY src ./src
 COPY tests ./tests
 RUN pnpm build

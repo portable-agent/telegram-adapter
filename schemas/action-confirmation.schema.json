@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portable-agent.dev/contracts/widgets/action-confirmation.schema.json",
+  "title": "Action confirmation widget",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "widget",
+    "actionId",
+    "payloadHash",
+    "title",
+    "fields",
+    "actions"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "widget": { "const": "action_confirmation" },
+    "actionId": { "type": "string", "format": "uuid" },
+    "payloadHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "value"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "value": { "type": "string", "minLength": 1 },
+          "sensitive": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "enum": ["confirm", "cancel"] },
+          "label": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

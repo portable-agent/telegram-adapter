@@ -1,0 +1,203 @@
+openapi: 3.1.0
+info:
+  title: Portable Agent Action API
+  version: 2.5.0
+  description: Создание, просмотр и подтверждение безопасных действий агента.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://api.portable-agent.dev/action-service
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/actions:
+    post:
+      operationId: proposeAction
+      summary: Создать предложение действия
+      tags: [Actions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProposeActionRequest"
+      responses:
+        "201":
+          description: Предложение создано и ожидает policy evaluation или подтверждения
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResponse"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /api/v1/actions/{actionId}:
+    get:
+      operationId: getAction
+      summary: Получить текущее состояние действия
+      tags: [Actions]
+      parameters:
+        - $ref: "#/components/parameters/ActionId"
+      responses:
+        "200":
+          description: Текущее состояние
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResponse"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /api/v1/actions/{actionId}/decisions:
+    post:
+      operationId: decideAction
+      summary: Подтвердить или отменить действие
+      tags: [Actions]
+      parameters:
+        - $ref: "#/components/parameters/ActionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionDecisionRequest"
+      responses:
+        "202":
+          description: Решение принято durable workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResponse"
+        "409":
+          $ref: "#/components/responses/Problem"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    ActionId:
+      name: actionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Problem:
+      description: Ошибка в формате RFC 9457 Problem Details
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    ProposeActionRequest:
+      type: object
+      additionalProperties: false
+      required: [kind, connector, payload, requestKey]
+      properties:
+        kind:
+          type: string
+          enum: [calendar.create_event]
+        connector:
+          type: string
+          enum: [fake-calendar]
+        payload:
+          $ref: "#/components/schemas/CalendarCreateEventPayload"
+        requestKey:
+          type: string
+          minLength: 8
+          maxLength: 128
+    ActionDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [decision, payloadHash]
+      properties:
+        decision:
+          type: string
+          enum: [CONFIRM, CANCEL]
+        payloadHash:
+          type: string
+          pattern: "^[a-f0-9]{64}$"
+    ActionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          status,
+          kind,
+          connector,
+          payload,
+          payloadHash,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        status:
+          type: string
+          enum:
+            [
+              PROPOSED,
+              AWAITING_APPROVAL,
+              APPROVED,
+              EXECUTING,
+              SUCCEEDED,
+              FAILED,
+              CANCELLED,
+            ]
+        kind: { type: string }
+        connector: { type: string }
+        payload:
+          $ref: "#/components/schemas/CalendarCreateEventPayload"
+          description: Сохранённые данные, которые пользователь подтверждает по payloadHash.
+        payloadHash: { type: string, pattern: "^[a-f0-9]{64}$" }
+        result:
+          $ref: "#/components/schemas/CalendarActionResult"
+          description: Результат успешного выполнения. До состояния SUCCEEDED поле отсутствует.
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CalendarActionResult:
+      type: object
+      additionalProperties: false
+      required: [eventId]
+      properties:
+        eventId:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Стабильный идентификатор события у календарного коннектора.
+    CalendarCreateEventPayload:
+      type: object
+      additionalProperties: false
+      required: [title, startAt, endAt, timeZone]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ".*\\S.*"
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        timeZone:
+          type: string
+          maxLength: 100
+          pattern: "^(UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$"
+        description: { type: string, maxLength: 2000 }
+        attendees:
+          type: array
+          maxItems: 50
+          uniqueItems: true
+          items: { type: string, format: email, maxLength: 254 }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string }
+        instance: { type: string, format: uri-reference }

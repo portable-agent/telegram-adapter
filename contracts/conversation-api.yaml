@@ -1,0 +1,124 @@
+openapi: 3.1.0
+info:
+  title: Portable Agent Conversation API
+  version: 2.5.0
+  description: Внутренний API состояния диалога и оркестрации предложения действия.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://api.portable-agent.dev/conversation
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/messages:
+    post:
+      tags: [messages]
+      operationId: createConversationMessage
+      summary: Обработать сообщение в диалоге
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageRequest"
+      responses:
+        "200":
+          description: Вопрос для уточнения или карточка сохранённого действия
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: JWT отсутствует или не подходит Conversation Service
+        "422":
+          description: Запрос не соответствует контракту
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Agent Runtime или Action Service временно недоступен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    MessageRequest:
+      type: object
+      additionalProperties: false
+      required: [requestKey, text, context]
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+          description: Отсутствует у первого сообщения и возвращается в ответе.
+        requestKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: "^[A-Za-z0-9._:-]+$"
+        text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        context:
+          $ref: "#/components/schemas/MessageContext"
+    MessageContext:
+      $ref: "./channel-gateway-api.yaml#/components/schemas/MessageContext"
+    MessageResponse:
+      type: object
+      additionalProperties: false
+      required: [messageId, conversationId, reply]
+      properties:
+        messageId:
+          type: string
+          format: uuid
+        conversationId:
+          type: string
+          format: uuid
+        reply:
+          oneOf:
+            - $ref: "#/components/schemas/TextReply"
+            - $ref: "#/components/schemas/ConfirmationReply"
+          discriminator:
+            propertyName: type
+            mapping:
+              text: "#/components/schemas/TextReply"
+              confirmation: "#/components/schemas/ConfirmationReply"
+    TextReply:
+      type: object
+      additionalProperties: false
+      required: [type, text]
+      properties:
+        type:
+          const: text
+        text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+    ConfirmationReply:
+      type: object
+      additionalProperties: false
+      required: [type, card]
+      properties:
+        type:
+          const: confirmation
+        card:
+          $ref: "../schemas/action-confirmation.schema.json"
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          description: Короткое описание ошибки без внутренних данных сервиса.

@@ -3,7 +3,17 @@ import type { StartLink } from '../model/link.js';
 
 export interface AuthClient {
     start(): Promise<StartLink>;
+    poll(deviceCode: string): Promise<LinkPoll>;
+    refresh(refreshToken: string): Promise<UserToken>;
 }
+
+export type UserToken = { accessToken: string; refreshToken: string; expiresIn: number };
+
+export type LinkPoll =
+    | { status: 'waiting'; waitMore: number }
+    | { status: 'approved'; accessToken: string; refreshToken: string; expiresIn: number }
+    | { status: 'denied' }
+    | { status: 'expired' };
 
 type Fetch = typeof fetch;
 
@@ -18,9 +28,20 @@ const responseSchema = z
     })
     .passthrough();
 
+const tokenSchema = z
+    .object({
+        access_token: z.string().min(1),
+        refresh_token: z.string().min(1),
+        expires_in: z.number().int().positive(),
+    })
+    .passthrough();
+
+const errorSchema = z.object({ error: z.string().min(1) }).passthrough();
+
 export class KeycloakAuthClient implements AuthClient {
     public constructor(
         private readonly deviceUrl: string,
+        private readonly tokenUrl: string,
         private readonly clientId: string,
         private readonly clientSecret: string,
         private readonly request: Fetch = fetch,
@@ -47,6 +68,67 @@ export class KeycloakAuthClient implements AuthClient {
             verifyUrl: value.verification_uri_complete ?? value.verification_uri,
             expiresIn: value.expires_in,
             interval: value.interval,
+        };
+    }
+
+    public async poll(deviceCode: string): Promise<LinkPoll> {
+        const body = new URLSearchParams({
+            grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+            device_code: deviceCode,
+            client_id: this.clientId,
+            client_secret: this.clientSecret,
+        });
+        const response = await this.request(this.tokenUrl, {
+            method: 'POST',
+            headers: { 'content-type': 'application/x-www-form-urlencoded' },
+            body,
+        });
+        const value: unknown = await response.json();
+        if (response.ok) {
+            const token = tokenSchema.parse(value);
+            return {
+                status: 'approved',
+                accessToken: token.access_token,
+                refreshToken: token.refresh_token,
+                expiresIn: token.expires_in,
+            };
+        }
+        const error = errorSchema.parse(value).error;
+        if (error === 'authorization_pending') {
+            return { status: 'waiting', waitMore: 0 };
+        }
+        if (error === 'slow_down') {
+            return { status: 'waiting', waitMore: 5 };
+        }
+        if (error === 'access_denied') {
+            return { status: 'denied' };
+        }
+        if (error === 'expired_token') {
+            return { status: 'expired' };
+        }
+        throw new Error('Keycloak token request failed.');
+    }
+
+    public async refresh(refreshToken: string): Promise<UserToken> {
+        const body = new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken,
+            client_id: this.clientId,
+            client_secret: this.clientSecret,
+        });
+        const response = await this.request(this.tokenUrl, {
+            method: 'POST',
+            headers: { 'content-type': 'application/x-www-form-urlencoded' },
+            body,
+        });
+        if (!response.ok) {
+            throw new Error('Keycloak refresh token is invalid.');
+        }
+        const token = tokenSchema.parse(await response.json());
+        return {
+            accessToken: token.access_token,
+            refreshToken: token.refresh_token,
+            expiresIn: token.expires_in,
         };
     }
 }

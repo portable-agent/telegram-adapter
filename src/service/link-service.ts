@@ -22,7 +22,7 @@ export class LinkService implements LinkHandler {
         await this.store.savePending({
             telegramUserId,
             chatId,
-            deviceCode: JSON.stringify(deviceCode),
+            deviceCode,
             userCode: link.userCode,
             verifyUrl: link.verifyUrl,
             expiresAt: new Date(createdAt.getTime() + link.expiresIn * 1000),
