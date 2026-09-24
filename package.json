@@ -13,6 +13,7 @@
         "lint": "eslint . && prettier --check .",
         "format": "prettier --write .",
         "test": "vitest run --coverage",
+        "test:postgres": "vitest run --config vitest.integration.config.ts",
         "test:watch": "vitest",
         "typecheck": "tsc --noEmit -p tsconfig.test.json",
         "build": "pnpm typecheck && tsc -p tsconfig.json"

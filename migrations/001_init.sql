@@ -12,3 +12,11 @@ CREATE TABLE IF NOT EXISTS telegram_pending_links (
 
 CREATE INDEX IF NOT EXISTS telegram_pending_links_poll_idx
     ON telegram_pending_links (poll_after);
+
+CREATE TABLE IF NOT EXISTS telegram_links (
+    telegram_user_id BIGINT PRIMARY KEY,
+    chat_id BIGINT NOT NULL,
+    refresh_token JSONB NOT NULL,
+    linked_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

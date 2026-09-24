@@ -8,10 +8,12 @@
 - защищённый webhook;
 - команда `/link`;
 - начало OAuth Device Flow;
+- polling Keycloak с lease для нескольких worker;
+- завершение привязки и уведомление пользователя;
 - шифрование device и refresh token;
 - порты для PostgreSQL, Keycloak, Telegram и Gateway.
 
-Обычные сообщения, polling привязки, `/unlink` и карточки подтверждения добавляются следующими TDD-срезами.
+Обычные сообщения, `/unlink` и карточки подтверждения добавляются следующими TDD-срезами.
 
 ## Проверка
 
@@ -20,6 +22,13 @@ corepack pnpm install
 pnpm lint
 pnpm test
 pnpm build
+```
+
+Интеграционная проверка repository требует отдельный PostgreSQL:
+
+```powershell
+$env:TEST_DATABASE_URL = "postgres://user:password@localhost:5432/telegram_adapter"
+pnpm test:postgres
 ```
 
 Настройки перечислены в `.env.example`. Настоящие секреты в Git не добавляются.

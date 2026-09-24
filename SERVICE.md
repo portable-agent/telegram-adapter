@@ -7,7 +7,7 @@
 | Язык               | TypeScript, Node.js 24                                                              |
 | Входящий контракт  | Telegram Bot API webhook                                                            |
 | Исходящий контракт | Keycloak Device Flow, Telegram Bot API, Channel Gateway API                         |
-| Свои данные        | Привязка Telegram user к OIDC session; зашифрованный refresh token                  |
+| Свои данные        | Pending Device Flow и привязка Telegram user к зашифрованному refresh token         |
 | Прямые зависимости | PostgreSQL, Keycloak, Telegram Bot API, Channel Gateway                             |
 | Не отвечает за     | Диалог, AI, approval, workflow и выполнение действий                                |
 | SLO                | Не определён до baseline-теста                                                      |
