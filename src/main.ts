@@ -18,7 +18,7 @@ const migration = await readFile(new URL('../migrations/001_init.sql', import.me
 await sql.unsafe(migration);
 
 const auth = new KeycloakAuthClient(settings.deviceUrl, settings.tokenUrl, settings.clientId, settings.clientSecret);
-const telegram = new HttpTelegramClient(`https://api.telegram.org/bot${settings.telegramToken}`);
+const telegram = new HttpTelegramClient(settings.telegramUrl);
 const store = new PostgresLinkStore(sql);
 const links = new LinkService(auth, store, new TokenBox(settings.tokenKey));
 const worker = new LinkWorker(auth, store, telegram, new TokenBox(settings.tokenKey));

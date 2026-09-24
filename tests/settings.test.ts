@@ -11,6 +11,7 @@ const env = {
     TOKEN_KEY_BASE64: Buffer.alloc(32, 1).toString('base64'),
     DATABASE_URL: 'postgres://user:pass@localhost:5432/telegram',
     CHANNEL_GATEWAY_URL: 'http://localhost:8084',
+    TELEGRAM_API_URL: 'http://fake-telegram:8080/',
 };
 
 describe('readSettings', () => {
@@ -20,6 +21,7 @@ describe('readSettings', () => {
         expect(settings.deviceUrl).toBe(
             'http://localhost:8091/realms/portable-agent/protocol/openid-connect/auth/device',
         );
+        expect(settings.telegramUrl).toBe('http://fake-telegram:8080/bot123456789:abcdefghijklmnopqrstuvwxyz');
         expect(settings.tokenKey).toHaveLength(32);
     });
 

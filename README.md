@@ -36,3 +36,4 @@ pnpm test:postgres
 ```
 
 Настройки перечислены в `.env.example`. Настоящие секреты в Git не добавляются.
+`TELEGRAM_API_URL` позволяет локальному стенду использовать fake Telegram API без настоящего bot token.
