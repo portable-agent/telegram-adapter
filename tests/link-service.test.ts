@@ -27,6 +27,10 @@ describe('LinkService', () => {
             removePending: vi.fn(),
             find: vi.fn(),
             saveSession: vi.fn(),
+            saveCallbacks: vi.fn(),
+            claimCallback: vi.fn(),
+            completeCallback: vi.fn(),
+            releaseCallback: vi.fn(),
         };
         const service = new LinkService(auth, store, new TokenBox(Buffer.alloc(32, 3)), () => new Date(0));
 
@@ -69,6 +73,10 @@ describe('LinkService', () => {
                 removePending: vi.fn(),
                 find: vi.fn(),
                 saveSession: vi.fn(),
+                saveCallbacks: vi.fn(),
+                claimCallback: vi.fn(),
+                completeCallback: vi.fn(),
+                releaseCallback: vi.fn(),
             },
             new TokenBox(Buffer.alloc(32, 3)),
         );

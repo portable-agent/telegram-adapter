@@ -12,6 +12,7 @@ nav:
     - Runbook: runbook.md
     - Решения:
           - Привязка аккаунта: decisions/0001-device-link.md
+          - Кнопки подтверждения: decisions/0002-confirmation-callback.md
 markdown_extensions:
     - admonition
     - pymdownx.superfences:

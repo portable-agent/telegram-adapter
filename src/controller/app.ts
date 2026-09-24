@@ -4,12 +4,14 @@ import type { TelegramClient } from '../client/telegram-client.js';
 import { telegramUpdateSchema } from '../model/telegram.js';
 import type { LinkHandler } from '../service/link-service.js';
 import type { MessageHandler } from '../service/message-service.js';
+import type { DecisionHandler } from '../service/decision-service.js';
 
 type AppParts = {
     webhookSecret: string;
     links: LinkHandler;
     telegram: TelegramClient;
     messages: MessageHandler;
+    decisions: DecisionHandler;
 };
 
 const sameSecret = (left: string, right: string): boolean => {
@@ -18,7 +20,7 @@ const sameSecret = (left: string, right: string): boolean => {
     return leftBytes.length === rightBytes.length && timingSafeEqual(leftBytes, rightBytes);
 };
 
-export const createApp = ({ webhookSecret, links, telegram, messages }: AppParts): FastifyInstance => {
+export const createApp = ({ webhookSecret, links, telegram, messages, decisions }: AppParts): FastifyInstance => {
     const app = Fastify({ logger: false });
 
     app.get('/health/live', () => ({ status: 'UP' }));
@@ -33,13 +35,23 @@ export const createApp = ({ webhookSecret, links, telegram, messages }: AppParts
         if (!parsed.success) {
             return reply.code(400).send({ code: 'INVALID_UPDATE' });
         }
+        const callback = parsed.data.callback_query;
+        if (callback) {
+            const result = await decisions.decide(String(callback.from.id), callback.data);
+            await telegram.answerCallback(callback.id, result.text);
+            return reply.code(200).send({ ok: true });
+        }
         const message = parsed.data.message;
         if (!message) {
             return reply.code(200).send({ ok: true });
         }
         if (message.text.trim() !== '/link') {
             const result = await messages.create(String(message.from.id), String(parsed.data.update_id), message.text);
-            await telegram.sendText(String(message.chat.id), result.text);
+            if (result.buttons) {
+                await telegram.sendButtons(String(message.chat.id), result);
+            } else {
+                await telegram.sendText(String(message.chat.id), result.text);
+            }
             return reply.code(200).send({ ok: true });
         }
         const result = await links.start(String(message.from.id), String(message.chat.id));

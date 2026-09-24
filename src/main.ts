@@ -10,6 +10,7 @@ import { TokenBox } from './security/token-box.js';
 import { LinkService } from './service/link-service.js';
 import { LinkWorker } from './service/link-worker.js';
 import { MessageService } from './service/message-service.js';
+import { DecisionService } from './service/decision-service.js';
 
 const settings = readSettings(process.env);
 const sql = postgres(settings.databaseUrl, { max: 5 });
@@ -30,7 +31,8 @@ const messages = new MessageService(
     settings.locale,
     settings.timeZone,
 );
-const app = createApp({ webhookSecret: settings.webhookSecret, links, telegram, messages });
+const decisions = new DecisionService(auth, gateway, store, new TokenBox(settings.tokenKey));
+const app = createApp({ webhookSecret: settings.webhookSecret, links, telegram, messages, decisions });
 
 let stopping = false;
 const runWorker = async (): Promise<void> => {

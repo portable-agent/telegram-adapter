@@ -20,7 +20,15 @@ sequenceDiagram
     Id-->>Bot: короткий access token + новый refresh token
     Bot->>Edge: сообщение + короткий access token
     Edge-->>Bot: текст или карточка
-    Bot-->>User: ответ Telegram
+    Bot->>Bot: сохраняет action и создаёт случайные callback id
+    Bot-->>User: текст или кнопки
+    User->>Bot: нажимает Подтвердить
+    Bot->>Bot: берёт callback во временный lease
+    Bot->>Id: обновляет access token
+    Bot->>Edge: decision + payload hash
+    Edge-->>Bot: действие принято
+    Bot->>Bot: помечает callback использованным
+    Bot-->>User: Решение принято
 ```
 
 ## Границы
@@ -32,5 +40,9 @@ sequenceDiagram
 - Адаптер хранит только данные связи канала и зашифрованный refresh token.
 - `update_id` становится стабильным `requestKey`, поэтому повтор webhook не создаёт второе действие.
 - `conversationId` сохраняется рядом со связью, чтобы следующие сообщения продолжали тот же диалог.
+- Telegram получает только случайный callback id. `actionId`, `payloadHash` и решение хранятся на
+  стороне адаптера.
+- Lease не позволяет двум worker обработать одно нажатие одновременно. После ошибки зависимости
+  lease снимается, поэтому пользователь может повторить действие.
 
 Ключ шифрования приходит из secret manager через окружение. В Git и PostgreSQL открытого токена нет.

@@ -17,6 +17,7 @@ export class MessageService implements MessageHandler {
         private readonly tokenBox: TokenBox,
         private readonly locale: string,
         private readonly timeZone: string,
+        private readonly now: () => Date = () => new Date(),
     ) {}
 
     public async create(telegramUserId: string, updateId: string, text: string): Promise<LinkReply> {
@@ -33,14 +34,32 @@ export class MessageService implements MessageHandler {
         };
         const result = await this.gateway.send(message, token.accessToken);
         await this.store.saveSession(telegramUserId, this.tokenBox.lock(token.refreshToken), result.conversationId);
-        return { text: this.render(result) };
+        return this.render(telegramUserId, result);
     }
 
-    private render(result: GatewayResult): string {
+    private async render(telegramUserId: string, result: GatewayResult): Promise<LinkReply> {
         if (result.reply.type === 'text') {
-            return result.reply.text;
+            return { text: result.reply.text };
         }
-        const fields = result.reply.card.fields.map((field) => `${field.label}: ${field.value}`).join('\n');
-        return `${result.reply.card.title}\n${fields}`;
+        const card = result.reply.card;
+        const fields = card.fields.map((field) => `${field.label}: ${field.value}`).join('\n');
+        const expiresAt = new Date(this.now().getTime() + 15 * 60 * 1000);
+        const callbacks = card.actions.map((action) => ({
+            id: randomUUID(),
+            telegramUserId,
+            actionId: card.actionId,
+            payloadHash: card.payloadHash,
+            decision: action.id === 'confirm' ? ('CONFIRM' as const) : ('CANCEL' as const),
+            expiresAt,
+        }));
+        await this.store.saveCallbacks(callbacks);
+        return {
+            text: `${card.title}\n${fields}`,
+            buttons: callbacks.map((callback, index) => ({
+                id: callback.id,
+                label: card.actions[index]!.label,
+            })),
+        };
     }
 }
+import { randomUUID } from 'node:crypto';

@@ -16,7 +16,7 @@ describe('PostgresLinkStore', () => {
         sql = postgres(databaseUrl, { max: 2 });
         const migration = await readFile(new URL('../migrations/001_init.sql', import.meta.url), 'utf8');
         await sql.unsafe(migration);
-        await sql`TRUNCATE telegram_links, telegram_pending_links`;
+        await sql`TRUNCATE telegram_callbacks, telegram_links, telegram_pending_links`;
     });
 
     afterAll(async () => {
@@ -56,5 +56,27 @@ describe('PostgresLinkStore', () => {
         expect(saved).toHaveLength(1);
         expect(box.unlock(saved[0]!.refresh_token)).toBe('rotated-refresh');
         await expect(store.find('404')).resolves.toBeNull();
+
+        const callbackId = '10000000-0000-4000-8000-000000000004';
+        const callback = {
+            id: callbackId,
+            telegramUserId: '100',
+            actionId: '10000000-0000-4000-8000-000000000003',
+            payloadHash: 'a'.repeat(64),
+            decision: 'CONFIRM' as const,
+            expiresAt: new Date(Date.now() + 60_000),
+        };
+        await store.saveCallbacks([callback]);
+
+        const now = new Date();
+        const leaseUntil = new Date(now.getTime() + 30_000);
+        await expect(store.claimCallback(callbackId, '100', now, leaseUntil)).resolves.toMatchObject(callback);
+        await expect(store.claimCallback(callbackId, '100', now, leaseUntil)).resolves.toBeNull();
+
+        await store.releaseCallback(callbackId, '100');
+        await expect(store.claimCallback(callbackId, '100', now, leaseUntil)).resolves.toMatchObject(callback);
+
+        await store.completeCallback(callbackId, '100', new Date());
+        await expect(store.claimCallback(callbackId, '100', now, leaseUntil)).resolves.toBeNull();
     });
 });

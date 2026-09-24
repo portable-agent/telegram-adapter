@@ -12,6 +12,14 @@ export const telegramUpdateSchema = z
             })
             .passthrough()
             .optional(),
+        callback_query: z
+            .object({
+                id: z.string().min(1),
+                from: z.object({ id: z.number().int() }).passthrough(),
+                data: z.uuid(),
+            })
+            .passthrough()
+            .optional(),
     })
     .passthrough();
 

@@ -34,4 +34,5 @@ export type PendingLink = {
 
 export type LinkReply = {
     text: string;
+    buttons?: Array<{ id: string; label: string }>;
 };

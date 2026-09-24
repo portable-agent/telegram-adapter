@@ -9,9 +9,14 @@ export type GatewayMessage = {
 };
 
 export type Card = {
+    actionId: string;
+    payloadHash: string;
     title: string;
     fields: Array<{ label: string; value: string; sensitive?: boolean | undefined }>;
+    actions: Array<{ id: 'confirm' | 'cancel'; label: string }>;
 };
+
+export type ActionResult = { status: string };
 
 export type GatewayResult = {
     messageId: string;

@@ -26,6 +26,10 @@ describe('LinkWorker', () => {
             removePending: vi.fn(),
             find: vi.fn(),
             saveSession: vi.fn(),
+            saveCallbacks: vi.fn(),
+            claimCallback: vi.fn(),
+            completeCallback: vi.fn(),
+            releaseCallback: vi.fn(),
         };
         const auth: AuthClient = {
             start: vi.fn(),
@@ -38,7 +42,13 @@ describe('LinkWorker', () => {
             refresh: vi.fn(),
         };
         const sendText = vi.fn<TelegramClient['sendText']>().mockResolvedValue(undefined);
-        const worker = new LinkWorker(auth, store, { sendText }, box, () => new Date(1_000));
+        const worker = new LinkWorker(
+            auth,
+            store,
+            { sendText, sendButtons: vi.fn(), answerCallback: vi.fn() },
+            box,
+            () => new Date(1_000),
+        );
 
         await worker.runOnce();
 
@@ -68,13 +78,23 @@ describe('LinkWorker', () => {
             removePending: vi.fn(),
             find: vi.fn(),
             saveSession: vi.fn(),
+            saveCallbacks: vi.fn(),
+            claimCallback: vi.fn(),
+            completeCallback: vi.fn(),
+            releaseCallback: vi.fn(),
         };
         const auth: AuthClient = {
             start: vi.fn(),
             poll: vi.fn().mockResolvedValue({ status: 'waiting', waitMore: 5 }),
             refresh: vi.fn(),
         };
-        const worker = new LinkWorker(auth, store, { sendText: vi.fn() }, box, () => new Date(1_000));
+        const worker = new LinkWorker(
+            auth,
+            store,
+            { sendText: vi.fn(), sendButtons: vi.fn(), answerCallback: vi.fn() },
+            box,
+            () => new Date(1_000),
+        );
 
         await worker.runOnce();
 
@@ -105,13 +125,23 @@ describe('LinkWorker', () => {
             removePending,
             find: vi.fn(),
             saveSession: vi.fn(),
+            saveCallbacks: vi.fn(),
+            claimCallback: vi.fn(),
+            completeCallback: vi.fn(),
+            releaseCallback: vi.fn(),
         };
         const auth: AuthClient = {
             start: vi.fn(),
             poll: vi.fn().mockResolvedValue({ status }),
             refresh: vi.fn(),
         };
-        const worker = new LinkWorker(auth, store, { sendText }, box, () => new Date(1_000));
+        const worker = new LinkWorker(
+            auth,
+            store,
+            { sendText, sendButtons: vi.fn(), answerCallback: vi.fn() },
+            box,
+            () => new Date(1_000),
+        );
 
         await worker.runOnce();
 

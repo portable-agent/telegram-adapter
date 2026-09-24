@@ -1,8 +1,14 @@
 import { z } from 'zod';
-import type { GatewayMessage, GatewayResult } from '../model/gateway.js';
+import type { Decision } from '../model/decision.js';
+import type { ActionResult, GatewayMessage, GatewayResult } from '../model/gateway.js';
 
 export interface GatewayClient {
     send(message: GatewayMessage, accessToken: string): Promise<GatewayResult>;
+    decide(
+        actionId: string,
+        command: { decision: Decision; payloadHash: string },
+        accessToken: string,
+    ): Promise<ActionResult>;
 }
 
 type Fetch = typeof fetch;
@@ -18,6 +24,8 @@ const resultSchema = z
                     type: z.literal('confirmation'),
                     card: z
                         .object({
+                            actionId: z.uuid(),
+                            payloadHash: z.string().regex(/^[a-f0-9]{64}$/),
                             title: z.string().min(1),
                             fields: z.array(
                                 z
@@ -27,6 +35,9 @@ const resultSchema = z
                                         sensitive: z.boolean().optional(),
                                     })
                                     .strict(),
+                            ),
+                            actions: z.array(
+                                z.object({ id: z.enum(['confirm', 'cancel']), label: z.string().min(1) }).strict(),
                             ),
                         })
                         .passthrough(),
@@ -57,5 +68,28 @@ export class HttpGatewayClient implements GatewayClient {
             throw new Error('Channel Gateway is unavailable.');
         }
         return resultSchema.parse(await response.json());
+    }
+
+    public async decide(
+        actionId: string,
+        command: { decision: Decision; payloadHash: string },
+        accessToken: string,
+    ): Promise<ActionResult> {
+        const response = await this.request(`${this.url}/api/v1/actions/${actionId}/decisions`, {
+            method: 'POST',
+            headers: {
+                authorization: `Bearer ${accessToken}`,
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify(command),
+            signal: AbortSignal.timeout(this.timeoutMs),
+        });
+        if (!response.ok) {
+            throw new Error('Channel Gateway decision failed.');
+        }
+        return z
+            .object({ status: z.string().min(1) })
+            .passthrough()
+            .parse(await response.json());
     }
 }

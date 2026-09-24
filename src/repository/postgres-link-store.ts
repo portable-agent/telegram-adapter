@@ -139,7 +139,7 @@ export class PostgresLinkStore implements LinkStore {
     public async saveSession(
         telegramUserId: string,
         refreshToken: PendingLink['deviceCode'],
-        conversationId: string,
+        conversationId: string | null,
     ): Promise<void> {
         await this.sql`
             UPDATE telegram_links
@@ -149,4 +149,77 @@ export class PostgresLinkStore implements LinkStore {
             WHERE telegram_user_id = ${telegramUserId}
         `;
     }
+
+    public async saveCallbacks(callbacks: StoredCallback[]): Promise<void> {
+        if (callbacks.length === 0) {
+            return;
+        }
+        await this.sql`
+            INSERT INTO telegram_callbacks ${this.sql(
+                callbacks.map((callback) => ({
+                    id: callback.id,
+                    telegram_user_id: callback.telegramUserId,
+                    action_id: callback.actionId,
+                    payload_hash: callback.payloadHash,
+                    decision: callback.decision,
+                    expires_at: callback.expiresAt,
+                })),
+            )}
+        `;
+    }
+
+    public async claimCallback(
+        id: string,
+        telegramUserId: string,
+        now: Date,
+        leaseUntil: Date,
+    ): Promise<StoredCallback | null> {
+        const rows = await this.sql<
+            Array<{
+                id: string;
+                telegram_user_id: string;
+                action_id: string;
+                payload_hash: string;
+                decision: StoredCallback['decision'];
+                expires_at: Date;
+            }>
+        >`
+            UPDATE telegram_callbacks
+            SET claimed_until = ${leaseUntil}
+            WHERE id = ${id}
+              AND telegram_user_id = ${telegramUserId}
+              AND used_at IS NULL
+              AND expires_at > ${now}
+              AND (claimed_until IS NULL OR claimed_until <= ${now})
+            RETURNING id, telegram_user_id, action_id, payload_hash, decision, expires_at
+        `;
+        const row = rows[0];
+        return row
+            ? {
+                  id: row.id,
+                  telegramUserId: row.telegram_user_id,
+                  actionId: row.action_id,
+                  payloadHash: row.payload_hash,
+                  decision: row.decision,
+                  expiresAt: row.expires_at,
+              }
+            : null;
+    }
+
+    public async completeCallback(id: string, telegramUserId: string, usedAt: Date): Promise<void> {
+        await this.sql`
+            UPDATE telegram_callbacks
+            SET used_at = ${usedAt}, claimed_until = NULL
+            WHERE id = ${id} AND telegram_user_id = ${telegramUserId}
+        `;
+    }
+
+    public async releaseCallback(id: string, telegramUserId: string): Promise<void> {
+        await this.sql`
+            UPDATE telegram_callbacks
+            SET claimed_until = NULL
+            WHERE id = ${id} AND telegram_user_id = ${telegramUserId} AND used_at IS NULL
+        `;
+    }
 }
+import type { StoredCallback } from '../model/decision.js';
