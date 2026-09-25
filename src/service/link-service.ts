@@ -29,7 +29,7 @@ export class LinkService implements LinkHandler {
             pollAfter: new Date(createdAt.getTime() + link.interval * 1000),
         });
         return {
-            text: `Откройте ${link.verifyUrl} и введите код ${link.userCode}.`,
+            text: `Откройте ${link.verifyUrl}. Если код не подставился автоматически, введите ${link.userCode}.`,
         };
     }
 }

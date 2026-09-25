@@ -36,7 +36,9 @@ describe('LinkService', () => {
 
         const result = await service.start('100', '200');
 
-        expect(result.text).toContain('ABCD-EFGH');
+        expect(result.text).toBe(
+            'Откройте https://login.example/device. Если код не подставился автоматически, введите ABCD-EFGH.',
+        );
         expect(savePending).toHaveBeenCalledOnce();
         const saved = savePending.mock.calls[0]?.[0] as PendingLink;
         expect(saved).toMatchObject({
