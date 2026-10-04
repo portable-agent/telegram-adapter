@@ -20,4 +20,6 @@
 - refresh token шифруется до записи в PostgreSQL;
 - callback содержит только случайный id, а action id и payload hash остаются в PostgreSQL;
 - callback становится использованным только после успешного ответа Channel Gateway;
+- OAuth-ссылка приходит в общем `connection` widget и превращается только в Telegram URL-кнопку;
+- адаптер не создаёт OAuth state, не меняет ссылку и не сохраняет её;
 - секреты и содержимое сообщений не попадают в обычные логи.

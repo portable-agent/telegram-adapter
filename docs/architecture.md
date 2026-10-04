@@ -19,9 +19,13 @@ sequenceDiagram
     Bot->>Id: refresh token
     Id-->>Bot: короткий access token + новый refresh token
     Bot->>Edge: сообщение + короткий access token
-    Edge-->>Bot: текст или карточка
-    Bot->>Bot: сохраняет action и создаёт случайные callback id
-    Bot-->>User: текст или кнопки
+    Edge-->>Bot: текст, confirmation или connection widget
+    alt confirmation
+        Bot->>Bot: сохраняет action и создаёт случайные callback id
+        Bot-->>User: текст и callback-кнопки
+    else connection
+        Bot-->>User: текст и URL-кнопка OAuth
+    end
     User->>Bot: нажимает Подтвердить
     Bot->>Bot: берёт callback во временный lease
     Bot->>Id: обновляет access token
@@ -42,6 +46,8 @@ sequenceDiagram
 - `conversationId` сохраняется рядом со связью, чтобы следующие сообщения продолжали тот же диалог.
 - Telegram получает только случайный callback id. `actionId`, `payloadHash` и решение хранятся на
   стороне адаптера.
+- OAuth URL не сохраняется. Адаптер только переводит общий `connection` widget в Telegram
+  `inline_keyboard.url`.
 - Lease не позволяет двум worker обработать одно нажатие одновременно. После ошибки зависимости
   lease снимается, поэтому пользователь может повторить действие.
 

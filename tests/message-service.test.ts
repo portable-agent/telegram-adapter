@@ -103,12 +103,55 @@ describe('MessageService', () => {
         expect(result.text).toBe('Подтвердите встречу\nНазвание: Demo');
         expect(result.buttons?.map((button) => button.label)).toEqual(['Подтвердить', 'Отменить']);
         expect(result.buttons).toHaveLength(2);
-        expect(result.buttons?.every((button) => /^[0-9a-f-]{36}$/.test(button.id))).toBe(true);
+        expect(result.buttons?.every((button) => button.type === 'callback' && /^[0-9a-f-]{36}$/.test(button.id))).toBe(
+            true,
+        );
         expect(saveCallbacks).toHaveBeenCalledOnce();
         expect(send).toHaveBeenCalledWith(
             expect.objectContaining({ conversationId: '10000000-0000-4000-8000-000000000002' }),
             'access',
         );
+    });
+
+    it('create_whenConnectionIsRequired_shouldRenderUrlButtonWithoutCallback', async () => {
+        const box = new TokenBox(Buffer.alloc(32, 8));
+        const saveCallbacks = vi.fn<LinkStore['saveCallbacks']>().mockResolvedValue(undefined);
+        const store = createStore({
+            find: vi.fn().mockResolvedValue({
+                telegramUserId: '100',
+                chatId: '200',
+                refreshToken: box.lock('refresh'),
+                conversationId: null,
+            }),
+            saveCallbacks,
+        });
+        const auth = createAuth({
+            refresh: vi.fn().mockResolvedValue({ accessToken: 'access', refreshToken: 'refresh', expiresIn: 300 }),
+        });
+        const send = vi.fn<GatewayClient['send']>().mockResolvedValue({
+            messageId: '10000000-0000-4000-8000-000000000001',
+            conversationId: '10000000-0000-4000-8000-000000000002',
+            reply: {
+                type: 'connection',
+                card: {
+                    schemaVersion: 1,
+                    widget: 'connection',
+                    provider: 'google-calendar',
+                    title: 'Подключить Google Calendar',
+                    text: 'Подключите календарь и повторите команду.',
+                    button: { label: 'Подключить', url: 'https://accounts.google.com/oauth' },
+                },
+            },
+        });
+        const service = new MessageService(auth, { send, decide: vi.fn() }, store, box, 'ru-RU', 'Europe/Moscow');
+
+        const result = await service.create('100', '43', 'Создай встречу');
+
+        expect(result).toEqual({
+            text: 'Подключить Google Calendar\nПодключите календарь и повторите команду.',
+            buttons: [{ type: 'url', label: 'Подключить', url: 'https://accounts.google.com/oauth' }],
+        });
+        expect(saveCallbacks).not.toHaveBeenCalled();
     });
 });
 

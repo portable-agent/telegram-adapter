@@ -14,6 +14,7 @@
 - обновление access token и отправка сообщения в Channel Gateway;
 - сохранение `conversationId` для следующих сообщений;
 - Telegram-кнопки подтверждения и отмены действий;
+- URL-кнопка общего виджета подключения внешнего аккаунта;
 - одноразовые callback id с lease: повтор возможен после временной ошибки;
 - порты для PostgreSQL, Keycloak, Telegram и Gateway.
 
@@ -38,10 +39,10 @@ pnpm test:postgres
 Настройки перечислены в `.env.example`. Настоящие секреты в Git не добавляются.
 `TELEGRAM_API_URL` позволяет локальному стенду использовать fake Telegram API без настоящего bot token.
 
-Типы запросов Channel Gateway генерируются из проверенного snapshot `contracts 2.5.0`. Обновление:
+Типы запросов Channel Gateway генерируются из проверенного snapshot `contracts 4.0.0`. Обновление:
 
 ```powershell
-./scripts/update-contracts.ps1 -Version 2.5.0
+./scripts/update-contracts.ps1 -Version 4.0.0
 corepack pnpm generate
 ```
 

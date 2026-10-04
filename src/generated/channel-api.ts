@@ -92,7 +92,7 @@ export interface components {
             /** @enum {string} */
             kind: "calendar.create_event";
             /** @enum {string} */
-            connector: "fake-calendar";
+            connector: "fake-calendar" | "google-calendar";
             payload: components["schemas"]["CalendarCreateEventPayload"];
             explanation: string;
             /** @enum {string} */
@@ -156,12 +156,36 @@ export interface components {
             type: "confirmation";
             card: components["schemas"]["action-confirmation.schema"];
         };
+        /** External account connection widget */
+        "connection-widget.schema": {
+            /** @constant */
+            schemaVersion: 1;
+            /** @constant */
+            widget: "connection";
+            /** @enum {unknown} */
+            provider: "google-calendar";
+            title: string;
+            text: string;
+            button: {
+                label: string;
+                /** Format: uri */
+                url: string;
+            };
+        };
+        ConnectionReply: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "connection";
+            card: components["schemas"]["connection-widget.schema"];
+        };
         MessageResponse: {
             /** Format: uuid */
             messageId: string;
             /** Format: uuid */
             conversationId: string;
-            reply: components["schemas"]["TextReply"] | components["schemas"]["ConfirmationReply"];
+            reply: components["schemas"]["TextReply"] | components["schemas"]["ConfirmationReply"] | components["schemas"]["ConnectionReply"];
         };
         ActionDecisionRequest: {
             /** @enum {string} */

@@ -17,6 +17,7 @@ $files = @(
     @{ Archive = 'package/openapi/agent-runtime-api.yaml'; Target = 'contracts/agent-runtime-api.yaml'; HasVersion = $true },
     @{ Archive = 'package/openapi/conversation-api.yaml'; Target = 'contracts/conversation-api.yaml'; HasVersion = $true },
     @{ Archive = 'package/schemas/action-confirmation.schema.json'; Target = 'schemas/action-confirmation.schema.json'; HasVersion = $false },
+    @{ Archive = 'package/schemas/connection-widget.schema.json'; Target = 'schemas/connection-widget.schema.json'; HasVersion = $false },
     @{ Archive = 'package/schemas/message-context.schema.json'; Target = 'schemas/message-context.schema.json'; HasVersion = $false }
 )
 $staged = @{}
