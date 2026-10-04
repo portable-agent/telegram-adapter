@@ -8,18 +8,18 @@ const hash = async (path: string): Promise<string> => {
 };
 
 describe('contract snapshots', () => {
-    it('uses the exact files from contract bundle 3.1.0', async () => {
+    it('uses the exact files from contract bundle 4.0.0', async () => {
         await expect(hash('contracts/channel-gateway-api.yaml')).resolves.toBe(
-            'cb0476d78bc93a52ae677468d0551356546e61fdf9bb6d4d1a70d2dade64c445',
+            'a7eb39148c10e3738a2171fde1a900659fc9d7ef8d3cbe39c09781ab590796ee',
         );
         await expect(hash('contracts/action-api.yaml')).resolves.toBe(
-            'b66489ba87369eccaea0aecfdb8151eca96f46961f7974db3b273ca20a82325e',
+            '4e81629ae113e354849e04616a74c6b93f597702f99e3fb2bd43b0f85eb7f3d8',
         );
         await expect(hash('contracts/agent-runtime-api.yaml')).resolves.toBe(
-            '1defb8f2165289e21f16b0e0fb893a3f767c0d21f92b4088db6c9395166c69c8',
+            'eae15ea79621139b2676e5d809c86f41e4911354fc4b44ee52baed659b591c88',
         );
         await expect(hash('contracts/conversation-api.yaml')).resolves.toBe(
-            '10accd0e403fd2ce443b900a6693e84d4c3e093bdd01d43d7971033f7d121b1b',
+            'ad4632524be68d2612b1efc6c6c0e988212ef3404f507083b32de67af0792329',
         );
         await expect(hash('schemas/action-confirmation.schema.json')).resolves.toBe(
             'd0352c8685c7a0a7d9a887e80c7db4209defb4da9c8596d7f4bd7981eba6b4b8',

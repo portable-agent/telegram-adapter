@@ -39,10 +39,10 @@ pnpm test:postgres
 Настройки перечислены в `.env.example`. Настоящие секреты в Git не добавляются.
 `TELEGRAM_API_URL` позволяет локальному стенду использовать fake Telegram API без настоящего bot token.
 
-Типы запросов Channel Gateway генерируются из проверенного snapshot `contracts 3.1.0`. Обновление:
+Типы запросов Channel Gateway генерируются из проверенного snapshot `contracts 4.0.0`. Обновление:
 
 ```powershell
-./scripts/update-contracts.ps1 -Version 3.1.0
+./scripts/update-contracts.ps1 -Version 4.0.0
 corepack pnpm generate
 ```
 
