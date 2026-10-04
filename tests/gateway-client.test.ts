@@ -24,6 +24,37 @@ describe('HttpGatewayClient', () => {
         expect(request.mock.calls[0]?.[1]?.headers).toMatchObject({ authorization: 'Bearer access-token' });
     });
 
+    it('send_whenGatewayReturnsConnection_shouldReturnSafeWidget', async () => {
+        const result = {
+            messageId: '10000000-0000-4000-8000-000000000001',
+            conversationId: '10000000-0000-4000-8000-000000000002',
+            reply: {
+                type: 'connection',
+                card: {
+                    schemaVersion: 1,
+                    widget: 'connection',
+                    provider: 'google-calendar',
+                    title: 'Подключить Google Calendar',
+                    text: 'Подключите календарь и повторите команду.',
+                    button: { label: 'Подключить', url: 'https://accounts.google.com/oauth' },
+                },
+            },
+        };
+        const request = vi.fn<typeof fetch>().mockResolvedValue(Response.json(result));
+        const client = new HttpGatewayClient('http://gateway', 1000, request);
+
+        await expect(
+            client.send(
+                {
+                    requestKey: 'telegram:43',
+                    text: 'Создай встречу',
+                    context: { locale: 'ru-RU', timeZone: 'Europe/Moscow' },
+                },
+                'access-token',
+            ),
+        ).resolves.toEqual(result);
+    });
+
     it('send_whenGatewayFails_shouldHideResponse', async () => {
         const request = vi.fn<typeof fetch>().mockResolvedValue(new Response('private error', { status: 502 }));
         const client = new HttpGatewayClient('http://gateway', 1000, request);

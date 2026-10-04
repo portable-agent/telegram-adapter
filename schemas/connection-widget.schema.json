@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portable-agent.dev/contracts/widgets/connection-widget.schema.json",
+  "title": "External account connection widget",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "widget",
+    "provider",
+    "title",
+    "text",
+    "button"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "widget": { "const": "connection" },
+    "provider": { "enum": ["google-calendar"] },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "text": { "type": "string", "minLength": 1, "maxLength": 1000 },
+    "button": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "url"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        }
+      }
+    }
+  }
+}

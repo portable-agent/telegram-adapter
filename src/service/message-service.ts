@@ -38,10 +38,29 @@ export class MessageService implements MessageHandler {
     }
 
     private async render(telegramUserId: string, result: GatewayResult): Promise<LinkReply> {
-        if (result.reply.type === 'text') {
-            return { text: result.reply.text };
+        switch (result.reply.type) {
+            case 'text':
+                return { text: result.reply.text };
+            case 'connection':
+                return {
+                    text: `${result.reply.card.title}\n${result.reply.card.text}`,
+                    buttons: [
+                        {
+                            type: 'url',
+                            label: result.reply.card.button.label,
+                            url: result.reply.card.button.url,
+                        },
+                    ],
+                };
+            case 'confirmation':
+                return this.renderConfirmation(telegramUserId, result.reply.card);
         }
-        const card = result.reply.card;
+    }
+
+    private async renderConfirmation(
+        telegramUserId: string,
+        card: Extract<GatewayResult['reply'], { type: 'confirmation' }>['card'],
+    ): Promise<LinkReply> {
         const fields = card.fields.map((field) => `${field.label}: ${field.value}`).join('\n');
         const expiresAt = new Date(this.now().getTime() + 15 * 60 * 1000);
         const callbacks = card.actions.map((action) => ({
@@ -56,6 +75,7 @@ export class MessageService implements MessageHandler {
         return {
             text: `${card.title}\n${fields}`,
             buttons: callbacks.map((callback, index) => ({
+                type: 'callback' as const,
                 id: callback.id,
                 label: card.actions[index]!.label,
             })),

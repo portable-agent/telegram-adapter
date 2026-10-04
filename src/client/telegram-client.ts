@@ -36,7 +36,7 @@ export class HttpTelegramClient implements TelegramClient {
                     inline_keyboard: [
                         (reply.buttons ?? []).map((button) => ({
                             text: button.label,
-                            callback_data: button.id,
+                            ...(button.type === 'url' ? { url: button.url } : { callback_data: button.id }),
                         })),
                     ],
                 },
