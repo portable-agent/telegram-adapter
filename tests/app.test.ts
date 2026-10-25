@@ -143,6 +143,33 @@ describe('Telegram webhook', () => {
         await app.close();
     });
 
+    it('post_whenStartCommandIsReceived_shouldReplyWithoutCallingGateway', async () => {
+        const sendText = vi.fn();
+        const create = vi.fn();
+        const app = createApp({
+            webhookSecret: 'a'.repeat(32),
+            links: { start: vi.fn() },
+            telegram: telegram(sendText),
+            messages: { create },
+            decisions: decisions(),
+        });
+
+        const response = await app.inject({
+            method: 'POST',
+            url: '/webhooks/telegram',
+            headers: { 'x-telegram-bot-api-secret-token': 'a'.repeat(32) },
+            payload: { ...update, message: { ...update.message, text: '/start' } },
+        });
+
+        expect(response.statusCode).toBe(200);
+        expect(create).not.toHaveBeenCalled();
+        expect(sendText).toHaveBeenCalledWith(
+            '200',
+            'Portable Agent готов. Подключите аккаунт командой /link, затем опишите задачу.',
+        );
+        await app.close();
+    });
+
     it('post_whenCallbackIsValid_shouldForwardDecisionAndAnswerCallback', async () => {
         const decide = vi.fn().mockResolvedValue({ text: 'Решение принято.' });
         const answerCallback = vi.fn();
