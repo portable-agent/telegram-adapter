@@ -5,7 +5,7 @@
 | Ответственность    | Перевести Telegram update в общий запрос Channel Gateway и ответ обратно в Telegram |
 | Владелец           | `portable-agent/backend`                                                            |
 | Язык               | TypeScript, Node.js 24                                                              |
-| Входящий контракт  | Telegram Bot API webhook или локальный `getUpdates`                                 |
+| Входящий контракт  | Telegram Bot API webhook                                                            |
 | Исходящий контракт | Keycloak Device Flow, Telegram Bot API, Channel Gateway API                         |
 | Свои данные        | Device Flow, привязка user к токену и одноразовые callback кнопок                   |
 | Прямые зависимости | PostgreSQL, Keycloak, Telegram Bot API, Channel Gateway                             |
@@ -23,6 +23,3 @@
 - OAuth-ссылка приходит в общем `connection` widget и превращается только в Telegram URL-кнопку;
 - адаптер не создаёт OAuth state, не меняет ссылку и не сохраняет её;
 - секреты и содержимое сообщений не попадают в обычные логи.
-
-В polling-режиме одновременно работает только один экземпляр адаптера для одного bot token.
-После ошибки обновление может прийти снова: `offset` меняется после успешной обработки.

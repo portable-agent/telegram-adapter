@@ -11,9 +11,6 @@ import { LinkService } from './service/link-service.js';
 import { LinkWorker } from './service/link-worker.js';
 import { MessageService } from './service/message-service.js';
 import { DecisionService } from './service/decision-service.js';
-import { PollWorker } from './service/poll-worker.js';
-import { handleUpdate } from './service/update-service.js';
-import { telegramUpdateSchema } from './model/telegram.js';
 
 const settings = readSettings(process.env);
 const sql = postgres(settings.databaseUrl, { max: 5 });
@@ -36,16 +33,6 @@ const messages = new MessageService(
 );
 const decisions = new DecisionService(auth, gateway, store, new TokenBox(settings.tokenKey));
 const app = createApp({ webhookSecret: settings.webhookSecret, links, telegram, messages, decisions });
-const pollAbort = new AbortController();
-const pollWorker = new PollWorker(telegram, async (raw) => {
-    const parsed = telegramUpdateSchema.safeParse(raw);
-    if (!parsed.success) {
-        console.error('Telegram update skipped: invalid shape.');
-        return;
-    }
-    await handleUpdate(parsed.data, { links, telegram, messages, decisions });
-});
-let pollRun: Promise<void> = Promise.resolve();
 
 let stopping = false;
 const runWorker = async (): Promise<void> => {
@@ -61,8 +48,6 @@ const runWorker = async (): Promise<void> => {
 
 const close = async (): Promise<void> => {
     stopping = true;
-    pollAbort.abort();
-    await pollRun;
     await app.close();
     await sql.end();
 };
@@ -72,6 +57,3 @@ process.on('SIGINT', () => void close());
 
 await app.listen({ port: settings.port, host: settings.host });
 void runWorker();
-if (settings.updateMode === 'poll') {
-    pollRun = pollWorker.run(pollAbort.signal);
-}
