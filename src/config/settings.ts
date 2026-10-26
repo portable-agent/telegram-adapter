@@ -14,6 +14,7 @@ const envSchema = z.object({
     KEYCLOAK_CLIENT_ID: z.string().min(1),
     KEYCLOAK_CLIENT_SECRET: z.string().min(16),
     LINK_POLL_MS: z.coerce.number().int().min(500).max(60_000).default(1000),
+    ACTION_POLL_MS: z.coerce.number().int().min(500).max(60_000).default(3000),
     DATABASE_URL: z.url(),
     CHANNEL_GATEWAY_URL: z.url().transform((url) => url.replace(/\/$/, '')),
     CHANNEL_GATEWAY_TIMEOUT_MS: z.coerce.number().int().min(100).max(30_000).default(10_000),
@@ -41,6 +42,7 @@ export type Settings = {
     tokenKey: Buffer;
     databaseUrl: string;
     linkPollMs: number;
+    actionPollMs: number;
     gatewayUrl: string;
     gatewayTimeoutMs: number;
     locale: string;
@@ -61,6 +63,7 @@ export const readSettings = (env: NodeJS.ProcessEnv): Settings => {
         tokenKey: value.TOKEN_KEY_BASE64,
         databaseUrl: value.DATABASE_URL,
         linkPollMs: value.LINK_POLL_MS,
+        actionPollMs: value.ACTION_POLL_MS,
         gatewayUrl: value.CHANNEL_GATEWAY_URL,
         gatewayTimeoutMs: value.CHANNEL_GATEWAY_TIMEOUT_MS,
         locale: value.DEFAULT_LOCALE,

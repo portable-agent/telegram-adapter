@@ -99,4 +99,19 @@ describe('HttpGatewayClient', () => {
             ),
         ).rejects.toThrow('Channel Gateway decision failed.');
     });
+
+    it('getStatus_whenGatewayReturnsAction_shouldUseUserToken', async () => {
+        const status = {
+            actionId: '10000000-0000-4000-8000-000000000003',
+            status: 'SUCCEEDED',
+            kind: 'calendar.create_event',
+            title: 'Встреча',
+        };
+        const request = vi.fn<typeof fetch>().mockResolvedValue(Response.json(status));
+        const client = new HttpGatewayClient('http://gateway', 1000, request);
+
+        await expect(client.getStatus(status.actionId, 'access-token')).resolves.toEqual(status);
+        expect(request.mock.calls[0]?.[0]).toBe(`http://gateway/api/v1/actions/${status.actionId}/status`);
+        expect(request.mock.calls[0]?.[1]?.headers).toMatchObject({ authorization: 'Bearer access-token' });
+    });
 });

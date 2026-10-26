@@ -2,6 +2,7 @@ import type { AuthClient } from '../client/auth-client.js';
 import type { GatewayClient } from '../client/gateway-client.js';
 import type { LinkReply } from '../model/link.js';
 import type { LinkStore } from '../repository/link-store.js';
+import type { ActionCheckStore } from '../repository/action-check-store.js';
 import type { TokenBox } from '../security/token-box.js';
 
 export interface DecisionHandler {
@@ -13,6 +14,7 @@ export class DecisionService implements DecisionHandler {
         private readonly auth: AuthClient,
         private readonly gateway: GatewayClient,
         private readonly store: LinkStore,
+        private readonly checks: ActionCheckStore,
         private readonly tokenBox: TokenBox,
         private readonly now: () => Date = () => new Date(),
     ) {}
@@ -41,6 +43,7 @@ export class DecisionService implements DecisionHandler {
                 token.accessToken,
             );
             await this.store.saveSession(telegramUserId, this.tokenBox.lock(token.refreshToken), user.conversationId);
+            await this.checks.watch({ actionId: callback.actionId, telegramUserId, chatId: user.chatId }, this.now());
             await this.store.completeCallback(callbackId, telegramUserId, this.now());
             return { text: 'Решение принято.' };
         } catch (error) {

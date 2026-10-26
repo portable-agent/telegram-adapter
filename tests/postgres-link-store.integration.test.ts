@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import postgres, { type Sql } from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgresLinkStore } from '../src/repository/postgres-link-store.js';
+import { PostgresActionCheckStore } from '../src/repository/postgres-action-check-store.js';
 import { TokenBox, type LockedToken } from '../src/security/token-box.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -16,7 +17,9 @@ describe('PostgresLinkStore', () => {
         sql = postgres(databaseUrl, { max: 2 });
         const migration = await readFile(new URL('../migrations/001_init.sql', import.meta.url), 'utf8');
         await sql.unsafe(migration);
-        await sql`TRUNCATE telegram_callbacks, telegram_links, telegram_pending_links`;
+        const actionMigration = await readFile(new URL('../migrations/002_action_checks.sql', import.meta.url), 'utf8');
+        await sql.unsafe(actionMigration);
+        await sql`TRUNCATE telegram_action_checks, telegram_callbacks, telegram_links, telegram_pending_links`;
     });
 
     afterAll(async () => {
@@ -78,5 +81,17 @@ describe('PostgresLinkStore', () => {
 
         await store.completeCallback(callbackId, '100', new Date());
         await expect(store.claimCallback(callbackId, '100', now, leaseUntil)).resolves.toBeNull();
+
+        const checks = new PostgresActionCheckStore(sql);
+        await checks.watch({ actionId: callback.actionId, telegramUserId: '100', chatId: '200' }, new Date(0));
+        await checks.watch({ actionId: callback.actionId, telegramUserId: '100', chatId: '200' }, new Date(0));
+        await expect(checks.claimReady(now, leaseUntil, 10)).resolves.toEqual([
+            { actionId: callback.actionId, telegramUserId: '100', chatId: '200' },
+        ]);
+        await expect(checks.claimReady(now, leaseUntil, 10)).resolves.toEqual([]);
+        await checks.reschedule(callback.actionId, new Date(0));
+        await expect(checks.claimReady(now, leaseUntil, 10)).resolves.toHaveLength(1);
+        await checks.finish(callback.actionId);
+        await expect(checks.claimReady(now, leaseUntil, 10)).resolves.toEqual([]);
     });
 });

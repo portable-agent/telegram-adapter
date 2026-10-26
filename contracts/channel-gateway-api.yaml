@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Portable Agent Channel Gateway API
-  version: 4.0.0
+  version: 4.1.0
   description: Единый текстовый вход для независимых каналов пользователя.
   license:
     name: Apache-2.0
@@ -79,6 +79,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /api/v1/actions/{actionId}/status:
+    get:
+      tags: [actions]
+      operationId: getActionStatus
+      summary: Получить короткое состояние своего действия
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "./action-api.yaml#/components/parameters/ActionId"
+      responses:
+        "200":
+          description: Состояние действия без сохранённого payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionStatusView"
+        "401":
+          description: JWT отсутствует или не подходит Channel Gateway
+        "404":
+          description: Действие не найдено либо принадлежит другому пользователю
+        "422":
+          description: Некорректный actionId
+        "502":
+          description: Action Service временно недоступен
   /api/v1/actions/{actionId}/decisions:
     post:
       tags: [actions]
@@ -128,6 +152,26 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    ActionStatusView:
+      type: object
+      additionalProperties: false
+      required: [actionId, status, kind, title]
+      properties:
+        actionId: { type: string, format: uuid }
+        status:
+          type: string
+          enum:
+            [
+              PROPOSED,
+              AWAITING_APPROVAL,
+              APPROVED,
+              EXECUTING,
+              SUCCEEDED,
+              FAILED,
+              CANCELLED,
+            ]
+        kind: { type: string, minLength: 1 }
+        title: { type: string, minLength: 1, maxLength: 200 }
     MessageRequest:
       type: object
       additionalProperties: false
