@@ -6,6 +6,7 @@
 ## Текущий срез
 
 - защищённый webhook;
+- локальный режим `getUpdates` без публичного адреса (`TELEGRAM_UPDATE_MODE=poll`);
 - локальный ответ на `/start` с подсказкой о `/link`;
 - команда `/link`;
 - начало OAuth Device Flow;
@@ -39,6 +40,12 @@ pnpm test:postgres
 
 Настройки перечислены в `.env.example`. Настоящие секреты в Git не добавляются.
 `TELEGRAM_API_URL` позволяет локальному стенду использовать fake Telegram API без настоящего bot token.
+В обычном режиме адаптер принимает webhook. Для локального настоящего бота установи
+`TELEGRAM_UPDATE_MODE=poll`: адаптер удалит прежний webhook без удаления ожидающих сообщений и
+будет получать `message` и `callback_query` через Telegram Bot API. Используй только один
+polling-процесс на bot token. При возврате к webhook запусти режим с `TELEGRAM_UPDATE_MODE=webhook`
+и настрой `setWebhook` во внешнем окружении. Получение обновлений допускает повтор после сбоя;
+обработчики должны сохранять идемпотентность.
 
 Типы запросов Channel Gateway генерируются из проверенного snapshot `contracts 4.0.0`. Обновление:
 

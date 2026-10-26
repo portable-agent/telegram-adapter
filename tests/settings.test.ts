@@ -23,9 +23,14 @@ describe('readSettings', () => {
         );
         expect(settings.telegramUrl).toBe('http://fake-telegram:8080/bot123456789:abcdefghijklmnopqrstuvwxyz');
         expect(settings.tokenKey).toHaveLength(32);
+        expect(settings.updateMode).toBe('webhook');
     });
 
     it('readSettings_whenTokenKeyIsShort_shouldRejectConfig', () => {
         expect(() => readSettings({ ...env, TOKEN_KEY_BASE64: Buffer.alloc(16).toString('base64') })).toThrow();
+    });
+
+    it('readSettings_whenPollModeIsSet_shouldEnablePolling', () => {
+        expect(readSettings({ ...env, TELEGRAM_UPDATE_MODE: 'poll' }).updateMode).toBe('poll');
     });
 });

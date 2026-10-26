@@ -9,6 +9,7 @@ const envSchema = z.object({
         .transform((url) => url.replace(/\/$/, '')),
     TELEGRAM_BOT_TOKEN: z.string().min(20),
     TELEGRAM_WEBHOOK_SECRET: z.string().min(32),
+    TELEGRAM_UPDATE_MODE: z.enum(['webhook', 'poll']).default('webhook'),
     KEYCLOAK_URL: z.url().transform((url) => url.replace(/\/$/, '')),
     KEYCLOAK_REALM: z.string().min(1),
     KEYCLOAK_CLIENT_ID: z.string().min(1),
@@ -34,6 +35,7 @@ export type Settings = {
     host: string;
     telegramUrl: string;
     webhookSecret: string;
+    updateMode: 'webhook' | 'poll';
     deviceUrl: string;
     tokenUrl: string;
     clientId: string;
@@ -54,6 +56,7 @@ export const readSettings = (env: NodeJS.ProcessEnv): Settings => {
         host: value.HOST,
         telegramUrl: `${value.TELEGRAM_API_URL}/bot${value.TELEGRAM_BOT_TOKEN}`,
         webhookSecret: value.TELEGRAM_WEBHOOK_SECRET,
+        updateMode: value.TELEGRAM_UPDATE_MODE,
         deviceUrl: `${value.KEYCLOAK_URL}/realms/${value.KEYCLOAK_REALM}/protocol/openid-connect/auth/device`,
         tokenUrl: `${value.KEYCLOAK_URL}/realms/${value.KEYCLOAK_REALM}/protocol/openid-connect/token`,
         clientId: value.KEYCLOAK_CLIENT_ID,
