@@ -71,4 +71,15 @@ describe('ActionWorker', () => {
         expect(finish).not.toHaveBeenCalled();
         expect(reschedule).toHaveBeenCalledWith(actionId, new Date(6000));
     });
+
+    it('runOnce_whenSavingDeliveryFails_shouldAllowDuplicateAfterRetry', async () => {
+        const { worker, sendText, finish, reschedule } = makeWorker('SUCCEEDED');
+        finish.mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
+
+        await worker.runOnce();
+        await worker.runOnce();
+
+        expect(sendText).toHaveBeenCalledTimes(2);
+        expect(reschedule).toHaveBeenCalledWith(actionId, new Date(6000));
+    });
 });
