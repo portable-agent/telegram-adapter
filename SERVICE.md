@@ -7,7 +7,7 @@
 | Язык               | TypeScript, Node.js 24                                                              |
 | Входящий контракт  | Telegram Bot API webhook                                                            |
 | Исходящий контракт | Keycloak Device Flow, Telegram Bot API, Channel Gateway API                         |
-| Свои данные        | Device Flow, привязка user к токену и одноразовые callback кнопок                   |
+| Свои данные        | Device Flow, привязка user к токену, callback и ожидание результата действия        |
 | Прямые зависимости | PostgreSQL, Keycloak, Telegram Bot API, Channel Gateway                             |
 | Не отвечает за     | Диалог, AI, approval, workflow и выполнение действий                                |
 | SLO                | Не определён до baseline-теста                                                      |
@@ -23,3 +23,4 @@
 - OAuth-ссылка приходит в общем `connection` widget и превращается только в Telegram URL-кнопку;
 - адаптер не создаёт OAuth state, не меняет ссылку и не сохраняет её;
 - секреты и содержимое сообщений не попадают в обычные логи.
+- результат действия читается через Gateway с токеном пользователя; в таблице ожидания нет токенов.

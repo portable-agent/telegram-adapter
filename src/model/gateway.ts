@@ -5,3 +5,4 @@ export type GatewayResult = operations['createConversationMessage']['responses']
 export type DecisionCommand = operations['decideAction']['requestBody']['content']['application/json'];
 type ActionResponse = operations['decideAction']['responses'][202]['content']['application/json'];
 export type ActionResult = Pick<ActionResponse, 'status'>;
+export type ActionStatusView = operations['getActionStatus']['responses'][200]['content']['application/json'];

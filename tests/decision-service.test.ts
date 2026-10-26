@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { AuthClient } from '../src/client/auth-client.js';
 import type { GatewayClient } from '../src/client/gateway-client.js';
 import type { LinkStore } from '../src/repository/link-store.js';
+import type { ActionCheckStore } from '../src/repository/action-check-store.js';
 import { TokenBox } from '../src/security/token-box.js';
 import { DecisionService } from '../src/service/decision-service.js';
 
@@ -31,7 +32,15 @@ describe('DecisionService', () => {
             refresh: vi.fn().mockResolvedValue({ accessToken: 'access', refreshToken: 'new-refresh', expiresIn: 300 }),
         });
         const decide = vi.fn<GatewayClient['decide']>().mockResolvedValue({ status: 'APPROVED' });
-        const service = new DecisionService(auth, { send: vi.fn(), decide }, store, box, () => new Date(1000));
+        const watch = vi.fn<ActionCheckStore['watch']>().mockResolvedValue(undefined);
+        const service = new DecisionService(
+            auth,
+            { send: vi.fn(), decide },
+            store,
+            createChecks({ watch }),
+            box,
+            () => new Date(1000),
+        );
 
         const result = await service.decide('100', '10000000-0000-4000-8000-000000000004');
 
@@ -42,6 +51,10 @@ describe('DecisionService', () => {
             'access',
         );
         expect(box.unlock(saveSession.mock.calls[0]![1])).toBe('new-refresh');
+        expect(watch).toHaveBeenCalledWith(
+            { actionId: '10000000-0000-4000-8000-000000000003', telegramUserId: '100', chatId: '200' },
+            new Date(1000),
+        );
         expect(completeCallback).toHaveBeenCalledWith('10000000-0000-4000-8000-000000000004', '100', new Date(1000));
     });
 
@@ -52,6 +65,7 @@ describe('DecisionService', () => {
             createAuth({}),
             { send: vi.fn(), decide },
             store,
+            createChecks({}),
             new TokenBox(Buffer.alloc(32, 9)),
         );
 
@@ -92,6 +106,7 @@ describe('DecisionService', () => {
             }),
             { send: vi.fn(), decide: vi.fn().mockRejectedValue(new Error('gateway unavailable')) },
             store,
+            createChecks({}),
             box,
             () => new Date(1000),
         );
@@ -102,6 +117,14 @@ describe('DecisionService', () => {
         expect(releaseCallback).toHaveBeenCalledWith('10000000-0000-4000-8000-000000000004', '100');
         expect(completeCallback).not.toHaveBeenCalled();
     });
+});
+
+const createChecks = (part: Partial<ActionCheckStore>): ActionCheckStore => ({
+    watch: vi.fn(),
+    claimReady: vi.fn(),
+    reschedule: vi.fn(),
+    finish: vi.fn(),
+    ...part,
 });
 
 const createAuth = (part: Partial<AuthClient>): AuthClient => ({

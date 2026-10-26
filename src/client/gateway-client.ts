@@ -1,9 +1,19 @@
 import { z } from 'zod';
-import type { ActionResult, DecisionCommand, GatewayMessage, GatewayResult } from '../model/gateway.js';
+import type {
+    ActionResult,
+    ActionStatusView,
+    DecisionCommand,
+    GatewayMessage,
+    GatewayResult,
+} from '../model/gateway.js';
 
 export interface GatewayClient {
     send(message: GatewayMessage, accessToken: string): Promise<GatewayResult>;
     decide(actionId: string, command: DecisionCommand, accessToken: string): Promise<ActionResult>;
+}
+
+export interface StatusClient {
+    getStatus(actionId: string, accessToken: string): Promise<ActionStatusView>;
 }
 
 type Fetch = typeof fetch;
@@ -67,6 +77,15 @@ const resultSchema = z
     })
     .strict();
 
+const statusSchema = z
+    .object({
+        actionId: z.uuid(),
+        status: z.enum(['PROPOSED', 'AWAITING_APPROVAL', 'APPROVED', 'EXECUTING', 'SUCCEEDED', 'FAILED', 'CANCELLED']),
+        kind: z.string().min(1),
+        title: z.string().min(1).max(200),
+    })
+    .strict();
+
 export class HttpGatewayClient implements GatewayClient {
     public constructor(
         private readonly url: string,
@@ -117,5 +136,16 @@ export class HttpGatewayClient implements GatewayClient {
             })
             .passthrough()
             .parse(await response.json());
+    }
+
+    public async getStatus(actionId: string, accessToken: string): Promise<ActionStatusView> {
+        const response = await this.request(`${this.url}/api/v1/actions/${actionId}/status`, {
+            headers: { authorization: `Bearer ${accessToken}` },
+            signal: AbortSignal.timeout(this.timeoutMs),
+        });
+        if (!response.ok) {
+            throw new Error('Channel Gateway status failed.');
+        }
+        return statusSchema.parse(await response.json());
     }
 }
