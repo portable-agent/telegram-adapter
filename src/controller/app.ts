@@ -5,7 +5,6 @@ import { telegramUpdateSchema } from '../model/telegram.js';
 import type { LinkHandler } from '../service/link-service.js';
 import type { MessageHandler } from '../service/message-service.js';
 import type { DecisionHandler } from '../service/decision-service.js';
-import { handleUpdate } from '../service/update-service.js';
 
 type AppParts = {
     webhookSecret: string;
@@ -14,6 +13,8 @@ type AppParts = {
     messages: MessageHandler;
     decisions: DecisionHandler;
 };
+
+const START_TEXT = 'Portable Agent готов. Подключите аккаунт командой /link, затем опишите задачу.';
 
 const sameSecret = (left: string, right: string): boolean => {
     const leftBytes = Buffer.from(left);
@@ -36,7 +37,33 @@ export const createApp = ({ webhookSecret, links, telegram, messages, decisions 
         if (!parsed.success) {
             return reply.code(400).send({ code: 'INVALID_UPDATE' });
         }
-        await handleUpdate(parsed.data, { links, telegram, messages, decisions });
+        const callback = parsed.data.callback_query;
+        if (callback) {
+            const result = await decisions.decide(String(callback.from.id), callback.data);
+            await telegram.answerCallback(callback.id, result.text);
+            return reply.code(200).send({ ok: true });
+        }
+        const message = parsed.data.message;
+        if (!message) {
+            return reply.code(200).send({ ok: true });
+        }
+        const command = message.text.trim();
+        if (command === '/start') {
+            await telegram.sendText(String(message.chat.id), START_TEXT);
+            return reply.code(200).send({ ok: true });
+        }
+        if (command === '/link') {
+            const result = await links.start(String(message.from.id), String(message.chat.id));
+            await telegram.sendText(String(message.chat.id), result.text);
+            return reply.code(200).send({ ok: true });
+        }
+
+        const result = await messages.create(String(message.from.id), String(parsed.data.update_id), message.text);
+        if (result.buttons) {
+            await telegram.sendButtons(String(message.chat.id), result);
+        } else {
+            await telegram.sendText(String(message.chat.id), result.text);
+        }
         return reply.code(200).send({ ok: true });
     });
 
