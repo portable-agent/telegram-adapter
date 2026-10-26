@@ -6,6 +6,7 @@
 ## Текущий срез
 
 - защищённый webhook;
+- локальный ответ на `/start` с подсказкой о `/link`;
 - команда `/link`;
 - начало OAuth Device Flow;
 - polling Keycloak с lease для нескольких worker;

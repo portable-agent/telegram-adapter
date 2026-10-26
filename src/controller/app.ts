@@ -14,6 +14,8 @@ type AppParts = {
     decisions: DecisionHandler;
 };
 
+const START_TEXT = 'Portable Agent готов. Подключите аккаунт командой /link, затем опишите задачу.';
+
 const sameSecret = (left: string, right: string): boolean => {
     const leftBytes = Buffer.from(left);
     const rightBytes = Buffer.from(right);
@@ -45,17 +47,23 @@ export const createApp = ({ webhookSecret, links, telegram, messages, decisions 
         if (!message) {
             return reply.code(200).send({ ok: true });
         }
-        if (message.text.trim() !== '/link') {
-            const result = await messages.create(String(message.from.id), String(parsed.data.update_id), message.text);
-            if (result.buttons) {
-                await telegram.sendButtons(String(message.chat.id), result);
-            } else {
-                await telegram.sendText(String(message.chat.id), result.text);
-            }
+        const command = message.text.trim();
+        if (command === '/start') {
+            await telegram.sendText(String(message.chat.id), START_TEXT);
             return reply.code(200).send({ ok: true });
         }
-        const result = await links.start(String(message.from.id), String(message.chat.id));
-        await telegram.sendText(String(message.chat.id), result.text);
+        if (command === '/link') {
+            const result = await links.start(String(message.from.id), String(message.chat.id));
+            await telegram.sendText(String(message.chat.id), result.text);
+            return reply.code(200).send({ ok: true });
+        }
+
+        const result = await messages.create(String(message.from.id), String(parsed.data.update_id), message.text);
+        if (result.buttons) {
+            await telegram.sendButtons(String(message.chat.id), result);
+        } else {
+            await telegram.sendText(String(message.chat.id), result.text);
+        }
         return reply.code(200).send({ ok: true });
     });
 
